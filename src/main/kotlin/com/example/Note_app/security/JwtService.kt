@@ -16,7 +16,7 @@ import kotlin.reflect.typeOf
 
 @Service
 class JwtService(
-   @Value("\${Jwt.secretKey}") private val JwtsecretKey:String
+   @Value("\${jwt.secretKey}") private val JwtsecretKey:String
 ){
 
     private val secretKey= Keys.hmacShaKeyFor(Base64.getDecoder().decode(JwtsecretKey))
@@ -36,19 +36,21 @@ class JwtService(
             .issuedAt(now)
             .expiration(exp)
             .signWith(secretKey,Jwts.SIG.HS256)
-        .compact()
+            .compact()
+
     }
 
      fun generateAccessToken(userId: String): String{
        return genaratetoken(userId,"access", accsesstokenValididty)
     }
      fun generateRefrehToken(userId: String): String{
-        return genaratetoken(userId,"refresh", accsesstokenValididty)
+        return genaratetoken(userId,"refresh", refreshtokenValidity)
     }
     fun validateAccessToken(token: String): Boolean {
         val claims = parseAllClaims(token) ?: return false
         val tokenType = claims["type"] as? String ?: return false
-        return tokenType == "access"
+        val expired = claims.expiration.before(Date())
+        return tokenType == "access" && !expired
     }
 
     fun validateRefreshToken(token: String): Boolean {

@@ -3,7 +3,9 @@ package com.example.Note_app.controller
 import com.example.Note_app.Repo.NoteRepo
 import com.example.Note_app.model.Note
 import com.example.Note_app.dto.NoteResponse
+import com.example.Note_app.security.SecurityConfig
 import org.bson.types.ObjectId
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.time.Instant
 
@@ -16,18 +18,22 @@ class NoteController(private val noteRepo: NoteRepo) {
         val content: String
     )
 
-    @GetMapping("/{ownerId}")
-    fun getNotesByOwnerId(@PathVariable ownerId: String): List<Note> {
+    @GetMapping()
+    fun getNotesByOwnerId(): List<Note> {
+        val ownerId= SecurityContextHolder.getContext().authentication.principal as String
+
         return noteRepo.findByOwnerId(ObjectId(ownerId))
     }
 
     @PostMapping
     fun createNote(@RequestBody body: NoteRequest): NoteResponse {
+        val ownerId= SecurityContextHolder.getContext().authentication.principal as String
+
         val note = Note(
             id=null,
             title = body.title,
             content = body.content,
-            ownerId = ObjectId(), // Generate ownerId automatically
+            ownerId = ObjectId(ownerId), // Generate ownerId automatically
             createdAt = Instant.now()
         )
         val savedNote = noteRepo.save(note)
@@ -44,12 +50,19 @@ class NoteController(private val noteRepo: NoteRepo) {
 
     @DeleteMapping("/{id}")
     fun deleteNote(@PathVariable id: String): String {
-        noteRepo.deleteById(ObjectId(id))
+
+        val note= noteRepo.findById(ObjectId(id)).orElseThrow {
+            throw IllegalArgumentException(" Note not found")
+        }
+
+        val ownerId= SecurityContextHolder.getContext().authentication.principal as String
+
+        if(note.ownerId.toHexString() == ownerId) {
+            noteRepo.deleteById(ObjectId(id))
+
+        }
         return "Note deleted successfully ✅"
     }
     
-    @GetMapping
-    fun getAllNotes(): List<Note> {
-        return noteRepo.findAll()
-    }
+
 }

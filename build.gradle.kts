@@ -49,6 +49,7 @@ dependencies {
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.6.1")
 
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
